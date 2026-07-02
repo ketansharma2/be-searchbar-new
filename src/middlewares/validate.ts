@@ -2,9 +2,22 @@ import type { Request, Response, NextFunction } from 'express';
 import { ZodError, type AnyZodObject } from 'zod';
 import { ApiError } from '../utils/ApiError';
 
+// The parsed, typed request data is attached here for controllers to consume.
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      validated?: { body?: unknown; query?: unknown; params?: unknown };
+    }
+  }
+}
+
 /**
  * Validates `req.body`, `req.query`, and `req.params` against a Zod schema.
- * On success, replaces the request parts with the parsed (typed/coerced) data.
+ * On success, the coerced/typed data is available on `req.validated`
+ * (and `req.body` is replaced for backwards compatibility). `req.query` is a
+ * read-only getter in newer Express, so controllers should read coerced query
+ * values from `req.validated.query`.
  */
 export const validate =
   (schema: AnyZodObject) =>
@@ -14,7 +27,8 @@ export const validate =
         body: req.body,
         query: req.query,
         params: req.params,
-      });
+      }) as { body?: unknown; query?: unknown; params?: unknown };
+      req.validated = parsed;
       if (parsed.body) req.body = parsed.body;
       next();
     } catch (err) {

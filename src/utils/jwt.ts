@@ -7,6 +7,7 @@ export interface AccessTokenPayload {
   sub: string; // user id
   role: Role;
   email: string;
+  name: string;
 }
 
 export interface RefreshTokenPayload {

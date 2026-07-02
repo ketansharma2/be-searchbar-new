@@ -1,6 +1,7 @@
-import { User, type IUser } from '../models/User';
+import { type IUser } from '../models/User';
 import { RefreshToken } from '../models/RefreshToken';
 import { ApiError } from '../utils/ApiError';
+import { userRepository } from '../repositories/user.repository';
 import {
   signAccessToken,
   signRefreshToken,
@@ -18,12 +19,13 @@ export interface AuthTokens {
 
 export interface PublicUser {
   id: string;
+  name: string;
   email: string;
   role: IUser['role'];
 }
 
 function toPublicUser(user: IUser): PublicUser {
-  return { id: user.id, email: user.email, role: user.role };
+  return { id: user.id, name: user.name ?? '', email: user.email, role: user.role };
 }
 
 async function issueTokens(user: IUser): Promise<AuthTokens> {
@@ -31,6 +33,7 @@ async function issueTokens(user: IUser): Promise<AuthTokens> {
     sub: user.id,
     role: user.role,
     email: user.email,
+    name: user.name ?? '',
   });
   const refreshToken = signRefreshToken(user.id);
 
@@ -51,7 +54,7 @@ export async function login(
   input: LoginInput
 ): Promise<{ user: PublicUser; tokens: AuthTokens }> {
   // Password is `select: false`, so explicitly include it.
-  const user = await User.findOne({ email: input.email }).select('+password');
+  const user = await userRepository.findByEmail(input.email, true);
   if (!user) {
     throw ApiError.unauthorized('Invalid email or password');
   }
@@ -59,6 +62,11 @@ export async function login(
   const passwordMatches = await user.comparePassword(input.password);
   if (!passwordMatches) {
     throw ApiError.unauthorized('Invalid email or password');
+  }
+
+  // Business rule: only active accounts can log in.
+  if (user.active === false) {
+    throw ApiError.forbidden('Your account has been deactivated. Contact an administrator.');
   }
 
   // Optional: enforce that the selected role matches the account role.
@@ -100,10 +108,16 @@ export async function rotateRefreshToken(
     throw ApiError.unauthorized('Refresh token reuse detected. Please log in again.');
   }
 
-  const user = await User.findById(payload.sub);
+  const user = await userRepository.findById(payload.sub);
   if (!user) {
     await RefreshToken.deleteMany({ user: payload.sub });
     throw ApiError.unauthorized('User no longer exists');
+  }
+
+  // A deactivated account cannot refresh its session.
+  if (user.active === false) {
+    await RefreshToken.deleteMany({ user: payload.sub });
+    throw ApiError.forbidden('Your account has been deactivated.');
   }
 
   // Rotate: delete the presented token, issue a brand new pair.
@@ -121,7 +135,7 @@ export async function logout(presentedToken: string | undefined): Promise<void> 
 }
 
 export async function getUserById(id: string): Promise<PublicUser> {
-  const user = await User.findById(id);
+  const user = await userRepository.findById(id);
   if (!user) {
     throw ApiError.unauthorized('User no longer exists');
   }

@@ -1,4 +1,8 @@
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env';
+
+// Rate limiting interferes with deterministic tests; disable it there.
+const skip = () => env.isTest;
 
 /** Generic limiter applied to all API traffic. */
 export const globalLimiter = rateLimit({
@@ -6,6 +10,7 @@ export const globalLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
   message: { message: 'Too many requests, please try again later.' },
 });
 
@@ -15,5 +20,6 @@ export const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
   message: { message: 'Too many attempts, please try again later.' },
 });

@@ -4,9 +4,13 @@ import { comparePassword } from '../utils/password';
 export type Role = 'ADMIN' | 'RECRUITER';
 
 export interface IUser extends Document {
+  name: string;
   email: string;
   password: string;
   role: Role;
+  active: boolean;
+  /** Daily resume-download quota (recruiter concept; ignored for admins). */
+  dailyDownloadLimit: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -14,6 +18,12 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>(
   {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      default: '',
+    },
     email: {
       type: String,
       required: true,
@@ -32,6 +42,16 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ['ADMIN', 'RECRUITER'],
       required: true,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    dailyDownloadLimit: {
+      type: Number,
+      default: 10,
+      min: 0,
     },
   },
   {

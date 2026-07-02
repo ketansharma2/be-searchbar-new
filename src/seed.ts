@@ -11,11 +11,18 @@ async function seed(): Promise<void> {
   await connectDatabase();
 
   const accounts = [
-    { email: env.seed.adminEmail, password: env.seed.adminPassword, role: 'ADMIN' as const },
     {
+      name: 'Maven Admin',
+      email: env.seed.adminEmail,
+      password: env.seed.adminPassword,
+      role: 'ADMIN' as const,
+    },
+    {
+      name: 'Demo Recruiter',
       email: env.seed.recruiterEmail,
       password: env.seed.recruiterPassword,
       role: 'RECRUITER' as const,
+      dailyDownloadLimit: 10,
     },
   ];
 
@@ -23,12 +30,17 @@ async function seed(): Promise<void> {
     const hashed = await hashPassword(acc.password);
     const existing = await User.findOne({ email: acc.email });
     if (existing) {
+      existing.name = acc.name;
       existing.password = hashed;
       existing.role = acc.role;
+      existing.active = true;
+      if ('dailyDownloadLimit' in acc && typeof acc.dailyDownloadLimit === 'number') {
+        existing.dailyDownloadLimit = acc.dailyDownloadLimit;
+      }
       await existing.save();
       console.log(`[seed] Updated ${acc.role}: ${acc.email}`);
     } else {
-      await User.create({ email: acc.email, password: hashed, role: acc.role });
+      await User.create({ ...acc, password: hashed, active: true });
       console.log(`[seed] Created ${acc.role}: ${acc.email}`);
     }
   }
