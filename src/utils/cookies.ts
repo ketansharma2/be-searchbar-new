@@ -16,7 +16,6 @@ function baseCookieOptions(): CookieOptions {
     httpOnly: true,
     secure: env.cookie.secure,
     sameSite: 'lax',
-    domain: env.cookie.domain,
     path: '/',
   };
 }
