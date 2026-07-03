@@ -37,8 +37,13 @@ export const env = {
 
   cookie: {
     // Empty string means "host-only" cookie (correct for localhost).
+    // In production set to the shared parent domain, e.g. .mavenjobs.in, so the
+    // cookie is first-party for both app.mavenjobs.in and api.mavenjobs.in.
     domain: process.env.COOKIE_DOMAIN?.trim() || undefined,
     secure: optional('COOKIE_SECURE', 'false') === 'true',
+    // 'lax' for a same-site (shared-domain) deployment — the reliable default.
+    // Only 'none' requires third-party cookies, which browsers increasingly block.
+    sameSite: optional('COOKIE_SAMESITE', 'lax').toLowerCase() as 'lax' | 'strict' | 'none',
   },
 
   seed: {

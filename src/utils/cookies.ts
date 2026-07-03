@@ -5,19 +5,24 @@ import { ttlToDate } from './jwt';
 export const REFRESH_COOKIE_NAME = 'refreshToken';
 
 /**
- * HttpOnly + Secure + SameSite cookie config.
+ * HttpOnly + Secure + SameSite cookie config, driven by env.
  *
- * For cross-origin deployments (frontend and backend on different domains):
- * - SameSite=none is required for cross-site cookies
- * - secure=true is mandatory when SameSite=none (HTTPS only)
- * 
- * Set COOKIE_SECURE=true in production environment variables.
+ * Recommended (same-site) production deployment: put the frontend and backend
+ * under one registrable domain — e.g. app.mavenjobs.in + api.mavenjobs.in — and:
+ *   COOKIE_DOMAIN=.mavenjobs.in   (cookie shared across both subdomains)
+ *   COOKIE_SAMESITE=lax           (first-party — sent on same-site requests)
+ *   COOKIE_SECURE=true            (HTTPS only)
+ * This keeps the refresh cookie first-party, so it survives browser third-party
+ * cookie blocking and is also readable by the Next.js middleware (proxy.ts).
+ *
+ * Localhost dev: leave COOKIE_DOMAIN empty, COOKIE_SECURE=false, COOKIE_SAMESITE=lax.
  */
 function baseCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: env.cookie.secure,
+    sameSite: env.cookie.sameSite,
+    domain: env.cookie.domain,
     path: '/',
   };
 }
