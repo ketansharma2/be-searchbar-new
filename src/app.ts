@@ -19,7 +19,7 @@ export function createApp(): Application {
   // CORS — allow the frontend origin and send/receive credentials (cookies).
   app.use(
     cors({
-      origin: env.clientOrigin,
+      origin: true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })
