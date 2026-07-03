@@ -21,6 +21,11 @@ class DownloadLogRepository extends BaseRepository<IDownloadLog> {
     });
   }
 
+  /** Total downloads across all users since local start-of-day. */
+  countAllToday(): Promise<number> {
+    return this.count({ createdAt: { $gte: startOfToday() } });
+  }
+
   /** Today's download counts for many users at once → { userId: count }. */
   async countTodayForUsers(userIds: string[]): Promise<Record<string, number>> {
     if (userIds.length === 0) return {};

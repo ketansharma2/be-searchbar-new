@@ -22,6 +22,7 @@ function optional(key: string, fallback: string): string {
 export const env = {
   nodeEnv: optional('NODE_ENV', 'development'),
   isProd: optional('NODE_ENV', 'development') === 'production',
+  isTest: optional('NODE_ENV', 'development') === 'test',
   port: parseInt(optional('PORT', '4000'), 10),
   clientOrigin: optional('CLIENT_ORIGIN', 'http://localhost:3000'),
 
@@ -46,4 +47,20 @@ export const env = {
     recruiterEmail: optional('SEED_RECRUITER_EMAIL', 'recruiter@mavenjobs.in'),
     recruiterPassword: optional('SEED_RECRUITER_PASSWORD', 'Maven@2026'),
   },
+
+  aws: {
+    region: optional('AWS_REGION', 'ap-south-1'),
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID?.trim() || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY?.trim() || '',
+    s3Bucket: process.env.AWS_S3_BUCKET?.trim() || '',
+    // Optional custom public base (e.g. CloudFront); defaults to the S3 URL.
+    s3PublicBaseUrl: process.env.AWS_S3_PUBLIC_BASE_URL?.trim() || '',
+  },
 } as const;
+
+/** True only when all S3 credentials/bucket are present. */
+export function isS3Configured(): boolean {
+  return Boolean(
+    env.aws.accessKeyId && env.aws.secretAccessKey && env.aws.s3Bucket && env.aws.region
+  );
+}

@@ -24,6 +24,13 @@ export function errorHandler(
     statusCode = err.statusCode;
     message = err.message;
     details = err.details;
+  } else if (err instanceof Error && err.name === 'MulterError') {
+    // File too large / unexpected field / etc.
+    statusCode = 400;
+    message =
+      (err as { code?: string }).code === 'LIMIT_FILE_SIZE'
+        ? 'File is too large'
+        : err.message;
   } else if (err instanceof Error) {
     // Mongo duplicate key
     if ('code' in err && (err as { code?: number }).code === 11000) {
