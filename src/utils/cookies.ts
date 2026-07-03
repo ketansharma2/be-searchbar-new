@@ -5,17 +5,19 @@ import { ttlToDate } from './jwt';
 export const REFRESH_COOKIE_NAME = 'refreshToken';
 
 /**
- * HttpOnly + Secure + SameSite=Lax cookie config.
+ * HttpOnly + Secure + SameSite cookie config.
  *
- * Note: SameSite=Lax allows cookies to be sent on top-level navigation
- * (like page refreshes), which is needed for the refresh token flow.
- * In production, host both under one parent domain and set COOKIE_DOMAIN.
+ * For cross-origin deployments (frontend and backend on different domains):
+ * - SameSite=none is required for cross-site cookies
+ * - secure=true is mandatory when SameSite=none (HTTPS only)
+ * 
+ * Set COOKIE_SECURE=true in production environment variables.
  */
 function baseCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
-    secure: env.cookie.secure,
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/',
   };
 }

@@ -1,5 +1,6 @@
 import { connectDatabase, disconnectDatabase } from './config/db';
 import { User } from './models/User';
+import { AppConfig } from './models/AppConfig';
 import { hashPassword } from './utils/password';
 import { env } from './config/env';
 
@@ -43,6 +44,27 @@ async function seed(): Promise<void> {
       await User.create({ ...acc, password: hashed, active: true });
       console.log(`[seed] Created ${acc.role}: ${acc.email}`);
     }
+  }
+
+  // Seed CORS allowed origins
+  const allowedOrigins = [
+    'http://localhost:3000', // Local development
+    'https://main.d27yukj62v16rs.amplifyapp.com', // Production frontend
+  ];
+
+  const corsConfig = await AppConfig.findOne({ key: 'cors_allowed_origins' });
+  if (corsConfig) {
+    corsConfig.value = allowedOrigins;
+    corsConfig.description = 'List of allowed CORS origins for cross-origin requests';
+    await corsConfig.save();
+    console.log('[seed] Updated CORS allowed origins');
+  } else {
+    await AppConfig.create({
+      key: 'cors_allowed_origins',
+      value: allowedOrigins,
+      description: 'List of allowed CORS origins for cross-origin requests',
+    });
+    console.log('[seed] Created CORS allowed origins config');
   }
 
   await disconnectDatabase();

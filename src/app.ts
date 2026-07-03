@@ -6,6 +6,7 @@ import { env } from './config/env';
 import routes from './routes';
 import { globalLimiter } from './middlewares/rateLimiter';
 import { notFoundHandler, errorHandler } from './middlewares/error.middleware';
+import { getCachedAllowedOrigins } from './services/config.service';
 
 export function createApp(): Application {
   const app = express();
@@ -16,10 +17,24 @@ export function createApp(): Application {
   // Security headers.
   app.use(helmet());
 
-  // CORS — allow the frontend origin and send/receive credentials (cookies).
+  // CORS — allow origins from database and send/receive credentials (cookies).
   app.use(
     cors({
-      origin: true,
+      origin: async (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        const allowedOrigins = await getCachedAllowedOrigins();
+        
+        // Check if the origin is in the allowed list
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin ${origin} not allowed by CORS`));
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })
