@@ -120,9 +120,18 @@ export async function rotateRefreshToken(
     throw ApiError.forbidden('Your account has been deactivated.');
   }
 
-  // Rotate: delete the presented token, issue a brand new pair.
-  await stored.deleteOne();
+  // Rotate: issue a brand new pair first, then delete old token after a delay.
+  // This grace period prevents race condition errors when multiple requests
+  // arrive simultaneously (e.g., page refresh triggering multiple API calls).
   const tokens = await issueTokens(user);
+  
+  // Delete old token after 2 seconds to allow concurrent requests to complete
+  setTimeout(() => {
+    stored.deleteOne().catch(() => {
+      // Ignore errors if token was already deleted
+    });
+  }, 2000);
+  
   return { user: toPublicUser(user), tokens };
 }
 
