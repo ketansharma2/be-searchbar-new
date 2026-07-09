@@ -12,7 +12,8 @@ export function createApp(): Application {
   const app = express();
 
   // Behind a proxy/load balancer in production (needed for secure cookies + rate limit IPs).
-  if (env.isProd) app.set('trust proxy', 1);
+  // Enable for Render deployment (RENDER env var) or when NODE_ENV is production
+  if (env.isProd || process.env.RENDER) app.set('trust proxy', 1);
 
   // Security headers.
   app.use(helmet());
