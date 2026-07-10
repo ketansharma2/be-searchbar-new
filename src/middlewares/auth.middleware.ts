@@ -19,13 +19,16 @@ declare global {
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
+    console.log('[cors-debug] requireAuth: no Authorization header', { path: req.path });
     throw ApiError.unauthorized('Missing access token');
   }
   const token = header.slice('Bearer '.length).trim();
   try {
     req.user = verifyAccessToken(token);
+    console.log('[cors-debug] requireAuth: verified', { path: req.path, sub: req.user.sub, role: req.user.role });
     next();
-  } catch {
+  } catch (err) {
+    console.log('[cors-debug] requireAuth: verification failed', { path: req.path, error: (err as Error).message });
     throw ApiError.unauthorized('Invalid or expired access token');
   }
 }

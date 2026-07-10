@@ -14,6 +14,13 @@ import {
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { user, tokens } = await authService.login(req.body);
   setRefreshCookie(res, tokens.refreshToken);
+  console.log('[cors-debug] login response', {
+    email: user.email,
+    role: user.role,
+    hasAccessToken: Boolean(tokens.accessToken),
+    hasRefreshToken: Boolean(tokens.refreshToken),
+    setCookieHeader: res.getHeader('Set-Cookie') ? 'sent' : '(missing)',
+  });
   res.status(200).json({
     success: true,
     user,

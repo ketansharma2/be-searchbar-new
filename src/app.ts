@@ -18,6 +18,22 @@ export function createApp(): Application {
   // Security headers.
   app.use(helmet());
 
+  // DEBUG-ONLY: log the raw signals needed to diagnose cross-origin auth
+  // (Origin / Cookie / Authorization headers) on every auth-related request.
+  // Does not change any security behavior — remove once the issue is confirmed fixed.
+  app.use((req, _res, next) => {
+    if (req.path.startsWith('/api/auth')) {
+      console.log('[cors-debug]', {
+        method: req.method,
+        path: req.path,
+        origin: req.headers.origin ?? '(none)',
+        cookieHeader: req.headers.cookie ?? '(none)',
+        authorizationHeader: req.headers.authorization ? 'present' : '(none)',
+      });
+    }
+    next();
+  });
+
   // CORS — allow origins from database and send/receive credentials (cookies).
   app.use(
     cors({
@@ -28,11 +44,12 @@ export function createApp(): Application {
         }
 
         const allowedOrigins = await getCachedAllowedOrigins();
-        
+
         // Check if the origin is in the allowed list
         if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
+          console.error('[cors-debug] rejected origin:', origin, 'allowed:', allowedOrigins);
           callback(new Error(`Origin ${origin} not allowed by CORS`));
         }
       },

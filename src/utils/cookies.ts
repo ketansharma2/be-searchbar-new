@@ -37,9 +37,13 @@ function baseCookieOptions(): CookieOptions {
 }
 
 export function setRefreshCookie(res: Response, token: string): void {
-  res.cookie(REFRESH_COOKIE_NAME, token, {
-    ...baseCookieOptions(),
-    expires: ttlToDate(env.jwt.refreshTtl),
+  const options = { ...baseCookieOptions(), expires: ttlToDate(env.jwt.refreshTtl) };
+  res.cookie(REFRESH_COOKIE_NAME, token, options);
+  console.log('[cors-debug] setRefreshCookie', {
+    domain: options.domain ?? '(host-only)',
+    secure: options.secure,
+    sameSite: options.sameSite,
+    expires: options.expires,
   });
 }
 
