@@ -1,4 +1,5 @@
 import { AppConfig } from '../models/AppConfig';
+import { env } from '../config/env';
 
 /**
  * Get allowed CORS origins from the database.
@@ -15,7 +16,7 @@ export async function getAllowedOrigins(): Promise<string[]> {
   }
   
   // Fallback to environment variable
-  return [];
+  return [env.clientOrigin];
 }
 
 /**
