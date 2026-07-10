@@ -15,6 +15,13 @@ export const REFRESH_COOKIE_NAME = 'refreshToken';
  * This keeps the refresh cookie first-party, so it survives browser third-party
  * cookie blocking and is also readable by the Next.js middleware (proxy.ts).
  *
+ * Cross-site deployment (e.g. AWS Amplify frontend + Render backend — different
+ * registrable domains): COOKIE_DOMAIN MUST be empty (Domain can only be the
+ * issuing host's own domain — setting a foreign domain makes the browser reject
+ * the cookie outright), and SameSite must be 'none' (a 'lax' cookie is simply
+ * never attached to cross-site XHR/fetch), which requires COOKIE_SECURE=true:
+ *   COOKIE_DOMAIN=   COOKIE_SAMESITE=none   COOKIE_SECURE=true
+ *
  * Localhost dev: leave COOKIE_DOMAIN empty, COOKIE_SECURE=false, COOKIE_SAMESITE=lax.
  */
 function baseCookieOptions(): CookieOptions {
