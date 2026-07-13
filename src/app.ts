@@ -11,20 +11,22 @@ import { getCachedAllowedOrigins } from './services/config.service';
 export function createApp(): Application {
   const app = express();
 
-  // Behind a proxy/load balancer in production (needed for secure cookies + rate limit IPs).
-  // Enable for Render deployment (RENDER env var) or when NODE_ENV is production
-  // if (env.isProd || process.env.RENDER) app.set('trust proxy', 1);
+  // Behind a proxy/load balancer in production (needed for `secure` cookies + rate limit IPs).
+  if (env.isProd) app.set('trust proxy', 1);
 
   // Security headers.
   // app.use(helmet());
 
-  // DEBUG-ONLY: log the raw signals needed to diagnose cross-origin auth
-  // (Origin / Cookie / Authorization headers) on every auth-related request.
-  // Does not change any security behavior — remove once the issue is confirmed fixed.
-
-  // CORS — allow origins from database and send/receive credentials (cookies).
+  // CORS — reflect only allowlisted origins (DB-configured, falling back to
+  // CLIENT_ORIGIN) and allow credentials so HttpOnly auth cookies are sent.
   app.use(cors({
-    origin: true,        // or specify allowed origins
+    origin: async (origin, callback) => {
+      // No Origin header (e.g. curl, server-to-server) — allow.
+      if (!origin) return callback(null, true);
+      const allowed = await getCachedAllowedOrigins();
+      if (allowed.includes(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   }));
 

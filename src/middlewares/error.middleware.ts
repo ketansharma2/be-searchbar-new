@@ -24,6 +24,9 @@ export function errorHandler(
     statusCode = err.statusCode;
     message = err.message;
     details = err.details;
+  } else if (err instanceof Error && err.message === 'Not allowed by CORS') {
+    statusCode = 403;
+    message = err.message;
   } else if (err instanceof Error && err.name === 'MulterError') {
     // File too large / unexpected field / etc.
     statusCode = 400;

@@ -24,7 +24,7 @@ export async function createUser(overrides: {
   });
 }
 
-/** Log a user in and return their access token. */
+/** Log a user in and return their `accessToken=<jwt>` cookie pair. */
 export async function loginAndGetToken(email: string, password: string): Promise<string> {
   const res = await request(app)
     .post('/api/auth/login')
@@ -32,10 +32,15 @@ export async function loginAndGetToken(email: string, password: string): Promise
   if (res.status !== 200) {
     throw new Error(`login failed (${res.status}): ${JSON.stringify(res.body)}`);
   }
-  return res.body.accessToken as string;
+  const setCookie = res.headers['set-cookie'] as unknown as string[] | undefined;
+  const accessCookie = setCookie?.find((c) => c.startsWith('accessToken='));
+  if (!accessCookie) {
+    throw new Error('login response did not set an accessToken cookie');
+  }
+  return accessCookie.split(';')[0];
 }
 
-/** Attach a Bearer token to a supertest request. */
-export function auth(req: Test, token: string): Test {
-  return req.set('Authorization', `Bearer ${token}`);
+/** Attach the access-token cookie to a supertest request. */
+export function auth(req: Test, cookie: string): Test {
+  return req.set('Cookie', cookie);
 }

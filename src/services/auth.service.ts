@@ -80,6 +80,15 @@ export async function login(
   return { user: toPublicUser(user), tokens };
 }
 
+// Coalesce concurrent rotation attempts for the same refresh token into one
+// DB round trip. `requireAuth` now calls `rotateRefreshToken` on every
+// protected request whose access token has expired, so a page that fires
+// several parallel API calls right at that boundary will present the same
+// refresh cookie multiple times before any response updates it. Without this,
+// each call would independently pass the reuse check and mint its own token
+// pair; with it, all but the first simply await that first call's result.
+const inFlightRotations = new Map<string, Promise<{ user: PublicUser; tokens: AuthTokens }>>();
+
 /**
  * Verify + rotate a refresh token. The old token is invalidated and a new
  * pair is issued (refresh-token rotation).
@@ -91,6 +100,21 @@ export async function rotateRefreshToken(
     throw ApiError.unauthorized('Refresh token missing');
   }
 
+  const tokenHash = hashToken(presentedToken);
+  const inFlight = inFlightRotations.get(tokenHash);
+  if (inFlight) return inFlight;
+
+  const rotation = doRotate(presentedToken, tokenHash).finally(() => {
+    inFlightRotations.delete(tokenHash);
+  });
+  inFlightRotations.set(tokenHash, rotation);
+  return rotation;
+}
+
+async function doRotate(
+  presentedToken: string,
+  tokenHash: string
+): Promise<{ user: PublicUser; tokens: AuthTokens }> {
   let payload;
   try {
     payload = verifyRefreshToken(presentedToken);
@@ -98,7 +122,6 @@ export async function rotateRefreshToken(
     throw ApiError.unauthorized('Invalid or expired refresh token');
   }
 
-  const tokenHash = hashToken(presentedToken);
   const stored = await RefreshToken.findOne({ tokenHash });
 
   if (!stored) {
@@ -120,18 +143,13 @@ export async function rotateRefreshToken(
     throw ApiError.forbidden('Your account has been deactivated.');
   }
 
-  // Rotate: issue a brand new pair first, then delete old token after a delay.
-  // This grace period prevents race condition errors when multiple requests
-  // arrive simultaneously (e.g., page refresh triggering multiple API calls).
+  // Rotate: issue the new pair, then delete the old token immediately.
+  // Legitimate concurrent requests are already handled by the in-flight
+  // coalescing above, so there's no need for a grace period here — leaving
+  // one in would just widen the window for a genuine stolen-token replay.
   const tokens = await issueTokens(user);
-  
-  // Delete old token after 2 seconds to allow concurrent requests to complete
-  setTimeout(() => {
-    stored.deleteOne().catch(() => {
-      // Ignore errors if token was already deleted
-    });
-  }, 2000);
-  
+  await stored.deleteOne();
+
   return { user: toPublicUser(user), tokens };
 }
 
