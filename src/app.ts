@@ -23,7 +23,10 @@ export function createApp(): Application {
   // Does not change any security behavior — remove once the issue is confirmed fixed.
 
   // CORS — allow origins from database and send/receive credentials (cookies).
-  app.use(cors());
+  app.use(cors({
+    origin: true,        // or specify allowed origins
+    credentials: true,
+  }));
 
   // Body + cookie parsing.
   app.use(express.json({ limit: '10kb' }));
