@@ -5,6 +5,7 @@ import type {
   ListRecruitersQuery,
   CreateRecruiterInput,
   UpdateRecruiterInput,
+  RecruiterSummaryQuery,
 } from '../validators/recruiter.validators';
 
 /** GET /api/recruiters */
@@ -12,6 +13,13 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = req.validated?.query as ListRecruitersQuery;
   const result = await recruiterService.listRecruiters(query);
   res.status(200).json({ success: true, ...result });
+});
+
+/** GET /api/recruiters/summary — "recruiters added in range" dashboard KPI. */
+export const summary = asyncHandler(async (req: Request, res: Response) => {
+  const query = req.validated?.query as RecruiterSummaryQuery;
+  const range = await recruiterService.getRecruiterRangeSummary(query.from, query.to);
+  res.status(200).json({ success: true, range });
 });
 
 /** GET /api/recruiters/:id */

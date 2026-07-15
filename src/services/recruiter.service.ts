@@ -12,6 +12,7 @@ import {
   buildMeta,
   type Paginated,
 } from '../utils/pagination';
+import { buildRangeSummary, type RangeSummary } from '../utils/dateRange';
 import type {
   CreateRecruiterInput,
   UpdateRecruiterInput,
@@ -177,6 +178,12 @@ export async function deleteRecruiter(id: string, actorId: string): Promise<void
     type: 'delete_recruiter',
     details: { recruiterId: id, email: user.email },
   });
+}
+
+/** "Recruiters added in range" KPI, vs. the equal-length prior window. */
+export async function getRecruiterRangeSummary(from: Date, to: Date): Promise<RangeSummary> {
+  const { count, previousCount } = await userRepository.getRecruiterRangeSummary(from, to);
+  return buildRangeSummary(from, to, count, previousCount);
 }
 
 /** Fetch a user, ensuring it exists and is actually a recruiter. */

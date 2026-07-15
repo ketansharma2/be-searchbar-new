@@ -1,6 +1,7 @@
-import { Types } from 'mongoose';
+import { Types, type FilterQuery } from 'mongoose';
 import { DownloadLog, type IDownloadLog } from '../models/DownloadLog';
 import { BaseRepository } from './base.repository';
+import { countCurrentAndPrevious } from '../utils/dateRange';
 
 function startOfToday(): Date {
   const d = new Date();
@@ -41,6 +42,19 @@ class DownloadLogRepository extends BaseRepository<IDownloadLog> {
     const map: Record<string, number> = {};
     for (const row of rows) map[row._id.toString()] = row.count;
     return map;
+  }
+
+  /**
+   * Downloads in [from, to] vs. the equal-length prior window — org-wide when
+   * `userId` is omitted (admin), scoped to one recruiter otherwise.
+   */
+  getRangeSummary(
+    from: Date,
+    to: Date,
+    userId?: string
+  ): Promise<{ count: number; previousCount: number }> {
+    const filter: FilterQuery<IDownloadLog> = userId ? { user: new Types.ObjectId(userId) } : {};
+    return countCurrentAndPrevious(DownloadLog, filter, 'createdAt', from, to);
   }
 }
 

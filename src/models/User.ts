@@ -70,4 +70,7 @@ userSchema.methods.comparePassword = function (candidate: string): Promise<boole
   return comparePassword(candidate, this.password);
 };
 
+// "Recruiters added in date range" KPI (dashboard analytics).
+userSchema.index({ role: 1, createdAt: -1 });
+
 export const User: Model<IUser> = model<IUser>('User', userSchema);

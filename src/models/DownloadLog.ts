@@ -24,6 +24,8 @@ const downloadLogSchema = new Schema<IDownloadLog>(
 
 // Fast "downloads by this user since start-of-day" counts.
 downloadLogSchema.index({ user: 1, createdAt: -1 });
+// Org-wide "downloads in date range" KPI (admin dashboard analytics).
+downloadLogSchema.index({ createdAt: -1 });
 
 export const DownloadLog: Model<IDownloadLog> = model<IDownloadLog>(
   'DownloadLog',

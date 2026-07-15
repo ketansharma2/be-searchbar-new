@@ -190,4 +190,63 @@ describe('Recruiter Management API', () => {
       expect(await ActivityLog.countDocuments({ type: 'delete_recruiter' })).toBe(1);
     });
   });
+
+  describe('summary (recruiters-added-in-range dashboard KPI)', () => {
+    it('is reachable — /:id routing does not swallow /summary', async () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+      const res = await auth(
+        request(app).get(
+          `/api/recruiters/summary?from=${from.toISOString()}&to=${now.toISOString()}`
+        ),
+        adminToken
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.range).toMatchObject({ count: expect.any(Number), previousCount: expect.any(Number) });
+    });
+
+    it('requires both from and to', async () => {
+      const res = await auth(request(app).get('/api/recruiters/summary'), adminToken);
+      expect(res.status).toBe(400);
+    });
+
+    it('counts recruiters created within the range vs. the equal-length prior window', async () => {
+      const now = new Date();
+      const to = now;
+      const from = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+      const prevTo = new Date(from.getTime() - 1);
+      const prevFrom = new Date(prevTo.getTime() - (to.getTime() - from.getTime()));
+
+      await createUser({
+        name: 'InRange',
+        email: 'inrange@test.com',
+        password: 'Passw0rd!',
+        role: 'RECRUITER',
+      });
+      // Mongoose's `timestamps: true` intercepts Model.updateOne and re-stamps createdAt even
+      // when explicitly set, so backdating for this test has to bypass it via the native driver.
+      await User.collection.updateOne(
+        { email: 'inrange@test.com' },
+        { $set: { createdAt: new Date(from.getTime() + 1000) } }
+      );
+      await createUser({
+        name: 'PrevRange',
+        email: 'prevrange@test.com',
+        password: 'Passw0rd!',
+        role: 'RECRUITER',
+      });
+      await User.collection.updateOne(
+        { email: 'prevrange@test.com' },
+        { $set: { createdAt: new Date(prevFrom.getTime() + 1000) } }
+      );
+
+      const res = await auth(
+        request(app).get(
+          `/api/recruiters/summary?from=${from.toISOString()}&to=${to.toISOString()}`
+        ),
+        adminToken
+      );
+      expect(res.body.range).toMatchObject({ count: 1, previousCount: 1, deltaPct: 0 });
+    });
+  });
 });

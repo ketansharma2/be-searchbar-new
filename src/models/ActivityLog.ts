@@ -49,6 +49,8 @@ const activityLogSchema = new Schema<IActivityLog>(
 // Common access pattern: newest-first, optionally scoped to a user/type.
 activityLogSchema.index({ user: 1, createdAt: -1 });
 activityLogSchema.index({ createdAt: -1 });
+// Admin "filter by type, sorted by recency" access pattern (Activity Logs read API).
+activityLogSchema.index({ type: 1, createdAt: -1 });
 
 export const ActivityLog: Model<IActivityLog> = model<IActivityLog>(
   'ActivityLog',

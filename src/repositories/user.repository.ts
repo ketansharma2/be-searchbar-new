@@ -2,6 +2,7 @@ import type { FilterQuery } from 'mongoose';
 import { User, type IUser } from '../models/User';
 import { BaseRepository } from './base.repository';
 import type { PaginationParams } from '../utils/pagination';
+import { countCurrentAndPrevious } from '../utils/dateRange';
 
 class UserRepository extends BaseRepository<IUser> {
   constructor() {
@@ -36,6 +37,11 @@ class UserRepository extends BaseRepository<IUser> {
       this.model.countDocuments(filter).exec(),
     ]);
     return { items, total };
+  }
+
+  /** Recruiters created in [from, to], vs. the equal-length prior window. */
+  getRecruiterRangeSummary(from: Date, to: Date): Promise<{ count: number; previousCount: number }> {
+    return countCurrentAndPrevious(User, { role: 'RECRUITER' }, 'createdAt', from, to);
   }
 }
 

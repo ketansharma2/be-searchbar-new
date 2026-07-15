@@ -8,6 +8,7 @@ import {
   updateRecruiterSchema,
   setStatusSchema,
   recruiterIdSchema,
+  recruiterSummarySchema,
 } from '../validators/recruiter.validators';
 
 const router = Router();
@@ -17,6 +18,8 @@ router.use(requireAuth, requireRole('ADMIN'));
 
 router.get('/', validate(listRecruitersSchema), recruiterController.list);
 router.post('/', validate(createRecruiterSchema), recruiterController.create);
+// Must come before /:id — otherwise Express matches "summary" as an :id param.
+router.get('/summary', validate(recruiterSummarySchema), recruiterController.summary);
 router.get('/:id', validate(recruiterIdSchema), recruiterController.getOne);
 router.patch('/:id', validate(updateRecruiterSchema), recruiterController.update);
 router.patch('/:id/status', validate(setStatusSchema), recruiterController.setStatus);

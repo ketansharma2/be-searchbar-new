@@ -67,6 +67,20 @@ export const setStatusSchema = z.object({
   }),
 });
 
+/** Dashboard "Recruiters added in range" KPI — a range is the whole point, so both bounds are required. */
+export const recruiterSummarySchema = z.object({
+  query: z
+    .object({
+      from: z.coerce.date({ required_error: '`from` is required' }),
+      to: z.coerce.date({ required_error: '`to` is required' }),
+    })
+    .refine((data) => data.from <= data.to, {
+      message: '`from` must not be after `to`',
+      path: ['from'],
+    }),
+});
+
 export type CreateRecruiterInput = z.infer<typeof createRecruiterSchema>['body'];
 export type UpdateRecruiterInput = z.infer<typeof updateRecruiterSchema>['body'];
 export type ListRecruitersQuery = z.infer<typeof listRecruitersSchema>['query'];
+export type RecruiterSummaryQuery = z.infer<typeof recruiterSummarySchema>['query'];
