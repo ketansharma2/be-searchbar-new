@@ -25,6 +25,7 @@ export const summary = asyncHandler(async (req: Request, res: Response) => {
 /** GET /api/recruiters/:id */
 export const getOne = asyncHandler(async (req: Request, res: Response) => {
   const recruiter = await recruiterService.getRecruiter(req.params.id);
+ 
   res.status(200).json({ success: true, recruiter });
 });
 
