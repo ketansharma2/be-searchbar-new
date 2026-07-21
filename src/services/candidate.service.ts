@@ -26,6 +26,8 @@ import type {
   SearchCandidatesQuery,
 } from '../validators/candidate.validators';
 import type { IBulkRowError } from '../models/BulkUploadLog';
+import { locationRepository } from '../repositories/location.repository';
+import { skillRepository } from '../repositories/skill.repository';
 
 const MAX_LOGGED_ERRORS = 500;
 
@@ -198,6 +200,21 @@ export async function getCandidateById(id: string): Promise<ICandidate> {
   return candidate;
 }
 
+// Add these functions to your candidate service file
+
+/**
+ * Get unique locations from all candidates
+ */
+export async function getUniqueLocations(): Promise<string[]> {
+  const locations = await locationRepository.getActiveLocations();
+  return locations.map(loc => `${loc.city}, ${loc.state}`);
+}
+
+export async function getUniqueSkills(): Promise<string[]> {
+  const skills = await skillRepository.getActiveSkills();
+  return skills.map(skill => skill.name);
+}
+
 // ── Search ────────────────────────────────────────────────────────────────
 
 export interface CandidateCard {
@@ -253,8 +270,7 @@ export async function searchCandidates(
     Boolean(q) ||
     Boolean(query.location) ||
     Boolean(query.designation) ||
-    query.minExp !== undefined ||
-    query.maxExp !== undefined ||
+    Boolean(query.experience) ||
     (query.skills?.length ?? 0) > 0 ||
     (query.keywords?.length ?? 0) > 0;
 
@@ -266,11 +282,33 @@ export async function searchCandidates(
   if (query.location) filter.location = ci(query.location);
   if (query.designation) filter.designation = ci(query.designation);
 
-  if (query.minExp !== undefined || query.maxExp !== undefined) {
-    filter.relevantExp = {};
-    if (query.minExp !== undefined) filter.relevantExp.$gte = query.minExp;
-    if (query.maxExp !== undefined) filter.relevantExp.$lte = query.maxExp;
+  if (query.experience) {
+  switch (query.experience) {
+    case "0":
+      filter.experience = { $eq: 0 };
+      break;
+
+    case "0-1":
+      filter.experience = { $gte: 0, $lte: 1 };
+      break;
+
+    case "1-2":
+      filter.experience = { $gte: 1, $lte: 2 };
+      break;
+
+    case "2-3":
+      filter.experience = { $gte: 2, $lte: 3 };
+      break;
+
+    case "3-5":
+      filter.experience = { $gte: 3, $lte: 5 };
+      break;
+
+    case "5+":
+      filter.experience = { $gte: 5 };
+      break;
   }
+}
 
   const and: FilterQuery<ICandidate>[] = [];
   // Skills: AND-match across topSkills ∪ skillsAll.
@@ -293,8 +331,7 @@ export async function searchCandidates(
       q,
       location: query.location,
       designation: query.designation,
-      minExp: query.minExp,
-      maxExp: query.maxExp,
+      experience: query.experience,
       skills: query.skills,
       keywords: query.keywords,
       resultCount: total,
