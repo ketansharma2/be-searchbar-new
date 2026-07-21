@@ -50,6 +50,17 @@ export const getOne = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({ success: true, candidate });
 });
 
+/** GET /api/candidates/locations (unique locations for suggestions) */
+export const getUniqueLocations = asyncHandler(async (req: Request, res: Response) => {
+  const locations = await candidateService.getUniqueLocations();
+  res.status(200).json({ success: true, locations });
+});
+
+/** GET /api/candidates/skills (unique skills for suggestions) */
+export const getUniqueSkills = asyncHandler(async (req: Request, res: Response) => {
+  const skills = await candidateService.getUniqueSkills();
+  res.status(200).json({ success: true, skills });
+});
 /** GET /api/candidates/:id/resume/preview  (no quota; recruiter + admin) */
 export const previewResume = asyncHandler(async (req: Request, res: Response) => {
   const result = await candidateService.previewResume(req.params.id, req.user!.sub);

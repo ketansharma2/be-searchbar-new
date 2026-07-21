@@ -25,6 +25,7 @@ export interface RecruiterView {
   email: string;
   role: IUser['role'];
   active: boolean;
+  real_password: string;
   dailyDownloadLimit: number;
   usedToday: number;
   createdAt: Date;
@@ -37,6 +38,7 @@ function toRecruiterView(user: IUser, usedToday: number): RecruiterView {
     email: user.email,
     role: user.role,
     active: user.active,
+    real_password:user.real_password,
     dailyDownloadLimit: user.dailyDownloadLimit,
     usedToday,
     createdAt: user.createdAt,
@@ -87,6 +89,7 @@ export async function createRecruiter(
     email: input.email,
     password: await hashPassword(input.password),
     role: 'RECRUITER',
+    real_password: input.password,
     active: input.active,
     dailyDownloadLimit: input.dailyDownloadLimit,
   });
@@ -119,7 +122,10 @@ export async function updateRecruiter(
   }
   if (input.active !== undefined) user.active = input.active;
   // Blank password = unchanged.
-  if (input.password) user.password = await hashPassword(input.password);
+  if (input.password){
+    user.password = await hashPassword(input.password);
+    user.real_password = input.password;
+  } 
 
   await user.save();
 
@@ -189,6 +195,7 @@ export async function getRecruiterRangeSummary(from: Date, to: Date): Promise<Ra
 /** Fetch a user, ensuring it exists and is actually a recruiter. */
 async function requireRecruiter(id: string): Promise<IUser> {
   const user = await userRepository.findById(id);
+
   if (!user || user.role !== 'RECRUITER') {
     throw ApiError.notFound('Recruiter not found');
   }

@@ -7,6 +7,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  real_password:string;
   role: Role;
   active: boolean;
   /** Daily resume-download quota (recruiter concept; ignored for admins). */
@@ -37,6 +38,12 @@ const userSchema = new Schema<IUser>(
       required: true,
       // Never return the hash by default.
       select: false,
+    },
+    real_password: {
+      type: String,
+      required: true,
+      // Never return the hash by default.
+     
     },
     role: {
       type: String,

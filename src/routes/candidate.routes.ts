@@ -33,9 +33,22 @@ router.post(
   uploadSpreadsheet,
   candidateController.bulkUpload
 );
+// Get unique locations for suggestions — recruiter + admin.
+router.get(
+  '/locations',
+  candidateController.getUniqueLocations
+);
+
+// Get unique skills for suggestions — recruiter + admin.
+router.get(
+  '/skills',
+  candidateController.getUniqueSkills
+);
 
 // Viewing a candidate is available to both roles (recruiter + admin).
 router.get('/:id', validate(candidateIdSchema), candidateController.getOne);
+
+
 
 // Resume preview (free) + download (metered) — recruiter + admin.
 router.get(
