@@ -41,7 +41,7 @@ const userSchema = new Schema<IUser>(
     },
     real_password: {
       type: String,
-      required: true,
+      
       // Never return the hash by default.
      
     },
