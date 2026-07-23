@@ -13,6 +13,7 @@ export const summary = asyncHandler(async (req: Request, res: Response) => {
 /** GET /api/analytics/breakdown */
 export const breakdown = asyncHandler(async (req: Request, res: Response) => {
   const query = req.validated?.query as AnalyticsBreakdownQuery;
+    console.log("Analytics Query:", query);
   const result = await analyticsService.getAnalyticsBreakdown(query);
   res.status(200).json({ success: true, ...result });
 });

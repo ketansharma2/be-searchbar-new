@@ -281,32 +281,63 @@ export async function searchCandidates(
   const filter: FilterQuery<ICandidate> = {};
   if (query.location) filter.location = ci(query.location);
   if (query.designation) filter.designation = ci(query.designation);
+   console.log("exp",query.experience);
+if (query.experience) {
+  let min = 0;
+  let max: number | null = null;
 
-  if (query.experience) {
   switch (query.experience) {
     case "0":
-      filter.experience = { $eq: 0 };
+      min = 0;
+      max = 0;
       break;
 
     case "0-1":
-      filter.experience = { $gte: 0, $lte: 1 };
+      min = 0;
+      max = 1;
       break;
 
     case "1-2":
-      filter.experience = { $gte: 1, $lte: 2 };
+      min = 1;
+      max = 2;
       break;
 
     case "2-3":
-      filter.experience = { $gte: 2, $lte: 3 };
+      min = 2;
+      max = 3;
       break;
 
     case "3-5":
-      filter.experience = { $gte: 3, $lte: 5 };
+      min = 3;
+      max = 5;
       break;
 
     case "5+":
-      filter.experience = { $gte: 5 };
+      min = 5;
+      max = null;
       break;
+  }
+
+  const experienceExpr = {
+    $toDouble: {
+      $arrayElemAt: [
+        { $split: ["$experience", " "] }, // works for "7.6 yrs" or "7.6"
+        0,
+      ],
+    },
+  };
+
+  if (max !== null) {
+    filter.$expr = {
+      $and: [
+        { $gte: [experienceExpr, min] },
+        { $lte: [experienceExpr, max] },
+      ],
+    };
+  } else {
+    filter.$expr = {
+      $gte: [experienceExpr, min],
+    };
   }
 }
 
