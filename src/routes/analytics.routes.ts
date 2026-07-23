@@ -6,8 +6,8 @@ import { analyticsBreakdownSchema, analyticsSummarySchema } from '../validators/
 
 const router = Router();
 
-// -only, matching the existing Analytics permission (product doc §3.5).
-router.use(requireAuth, requireRole(''));
+// Admin-only, matching the existing Analytics permission (product doc §3.5).
+router.use(requireAuth, requireRole('ADMIN'));
 
 router.get('/summary', validate(analyticsSummarySchema), analyticsController.summary);
 router.get('/breakdown', validate(analyticsBreakdownSchema), analyticsController.breakdown);
